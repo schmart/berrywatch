@@ -5,6 +5,8 @@ VisualStudioVersion = 17.4.33103.184
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "berrywatch", "berrywatch.csproj", "{AF6A04A8-A505-4E9A-83B0-87AE1C719026}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileServer", "..\FileServer\FileServer.csproj", "{A5152ABB-8AF3-4643-B907-56494745398C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{AF6A04A8-A505-4E9A-83B0-87AE1C719026}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AF6A04A8-A505-4E9A-83B0-87AE1C719026}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AF6A04A8-A505-4E9A-83B0-87AE1C719026}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5152ABB-8AF3-4643-B907-56494745398C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5152ABB-8AF3-4643-B907-56494745398C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5152ABB-8AF3-4643-B907-56494745398C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5152ABB-8AF3-4643-B907-56494745398C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

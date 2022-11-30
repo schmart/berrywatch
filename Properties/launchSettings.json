@@ -2,7 +2,7 @@
   "profiles": {
     "berrywatch": {
       "commandName": "Project",
-      "commandLineArgs": "watch -d 192.168.178.129 -f c:\\temp\\berry"
+      "commandLineArgs": "watch -d 192.168.178.179 -f c:\\temp\\berry\\"
     }
   }
 }
