@@ -1,4 +1,9 @@
 # Upload berry source files to TASMOTA ESP32 device for rapid development
+
+This tool monitors a local folder and automatically transfers the Berry files contained there to a TASMOTA ESP32 device and restarts it if desired. It uses an local
+
+A local web server is started to transfer the files. The download is triggered via a GetUrl command on the TASMOTA devices.
+
 ## Options
 
 ```
