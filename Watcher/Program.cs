@@ -5,10 +5,5 @@ using CommandLine;
 Parser.Default.ParseArguments<Watcher>(args)
               .WithParsed<Watcher>(o =>
                 {
-
+                    o.Run();
                 });
-
-CommandLine.Parser.Default.ParseArguments<Watcher>(args)
-   .MapResult(
-     (Watcher watcher) => watcher.Run(),
-     errs => 1);

@@ -35,7 +35,7 @@ public class Server
         {
             OnPrepareResponse = (ctx) =>
             {
-                Console.WriteLine(ctx.File.Name);
+                Console.WriteLine("Devices fetches "+ctx.File.Name);
             },
             ContentTypeProvider = provider,
             FileProvider = fileProvider,

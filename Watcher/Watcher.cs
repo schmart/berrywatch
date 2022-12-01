@@ -130,8 +130,6 @@ namespace berrywatch
         {
             this.watcher = new FileSystemWatcher();
             watcher.Path = this.Folder;
-            //watcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
-            //                       | NotifyFilters.FileName | NotifyFilters.DirectoryName;
             watcher.NotifyFilter = NotifyFilters.LastWrite;
             watcher.Filter = this.Filter;
             watcher.Changed += OnChanged;
@@ -158,9 +156,9 @@ namespace berrywatch
 
         private async Task RunTasmotaCommand(string cmd)
         {
+            Console.Write("CMD " + cmd);
             var encoded = HttpUtility.UrlEncode(cmd);
             var request = $"/cm?cmnd={encoded}";
-            Console.Write(request);
             var result = await this.wc.GetAsync(request);
             Console.WriteLine(" " +result.StatusCode);
         }
