@@ -4,16 +4,32 @@ This tool monitors a local folder and automatically transfers the Berry files co
 
 A local web server is started to transfer the files. The download is triggered via a GetUrl command on the TASMOTA devices.
 
+## Install
+
+Use dotnet cli to install this as global tool. Run the following in folder **Watcher**
+``` cmd
+dotnet pack
+rem only if already installed
+dotnet tool uninstall -g berrywatch
+dotnet tool install --global --add-source ./nupkg berrywatch
+```
+## Usage
+If this tool is installed via *dotnet tool install* you can simple run it on the command shell
+
+```
+berrywatch -u http://192.168.178.101:5001 -d 192.168.178.179 -f c:\Projekte\berry\m5stack
+```
+
 ## Options
 
 ```
-  -u, --url          (Default: http://192.168.178.101:5001) Host local server on this url
+  -u, --url          Required. Host local server on this url. Example: http://192.168.178.101:5001
 
   -d, --device       Required. IP/Adress of tasmota device
 
-  -f, --folder       Required. (Default: C:\temp\berry\) Folder to watch
+  -f, --folder       Required. Folder to watch. Must be an absolute path.
 
-  --filter           (Default: *.be) Filter for files to watch
+  --filter           (Default: *.*) Filter for files to watch
 
   --restart          (Default: true) Restart device after each upload
 
@@ -25,9 +41,3 @@ A local web server is started to transfer the files. The download is triggered v
 
 ```
 
-## Install
-
-Use dotnet cli to compile
-``` cmd
-dotnet publish berrywatch.csproj -o c:\tools\berrywatch --no-self-contained
-```
