@@ -17,6 +17,8 @@ namespace berrywatch
     {
         private FileSystemWatcher watcher;
         private HttpClient wc;
+        private Timer timer = null;
+
 
         [Option('u', "url", Required = false, HelpText = "Host local server on this url", Default=@"http://192.168.178.101:5001")]
         public string ServerUrl { get; set; }
@@ -31,14 +33,63 @@ namespace berrywatch
         [Option("filter", Required = false, HelpText = "Filter for files to watch", Default = "*.be")]
         public string Filter { get; set; }
 
+        [Option("restart", Required = false, HelpText = "Restart device after each upload", Default = true)]
+        public bool RestartAfterUpload{ get; set; }
+
+        [Option("initialUpload", Required = false, HelpText = "Upload all files at program start", Default = true)]
+        public bool InitalUploadAllFiles { get; set; }
+
         public int Run()
         {
-            this.watch();
             this.wc = new HttpClient();
             this.wc.BaseAddress = new Uri($"http://{this.DeviceAddress}");
+
+            if (this.InitalUploadAllFiles)
+            {
+                Task.Run(async () =>
+                {
+                    await Task.Delay(1000);
+                    await this.uploadAllFiles();
+                }).Wait();
+            }
+            this.watch();
             var srv = new Server();
             srv.Run(this.ServerUrl, this.Folder);
             return 0;
+        }
+
+        private async Task uploadAllFiles()
+        {
+            var all = Directory.GetFiles(this.Folder,this.Filter, SearchOption.TopDirectoryOnly);
+            foreach (var file in all) 
+            { 
+                await this.uploadFileAsync(file);
+            }
+        }
+
+        private void TriggerRestart()
+        {
+            if (!this.RestartAfterUpload)
+                return;
+            if (this.timer != null)
+            {
+                this.timer.Dispose(); 
+
+            } 
+        
+            this.timer = new Timer((obj) => this.restarter(), null, 1000, Timeout.Infinite);
+            
+
+        }
+        private void restarter()
+        {
+            this.timer.Dispose();
+            this.timer = null;
+            Task.Run(async () =>
+            {
+                await this.RunTasmotaCommand("restart 1");
+                Console.WriteLine("Restarted");                
+            }).Wait();
         }
 
         private void watch()
@@ -65,6 +116,10 @@ namespace berrywatch
             Console.WriteLine($"Upload file {path}");
 
             await this.RunTasmotaCommand($"UrlFetch {ServerUrl}/prj/{path}");
+            if (this.RestartAfterUpload)
+            {
+                this.TriggerRestart();
+            }
         }
 
         private async Task RunTasmotaCommand(string cmd)
