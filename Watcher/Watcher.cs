@@ -18,19 +18,20 @@ namespace berrywatch
         private FileSystemWatcher watcher;
         private HttpClient wc;
         private Timer timer = null;
+        private Task serverTask = null;
 
 
-        [Option('u', "url", Required = false, HelpText = "Host local server on this url", Default=@"http://192.168.178.101:5001")]
+        [Option('u', "url", Required = true, HelpText = "Host local server on this url. Example: http://192.168.178.101:5001")]
         public string ServerUrl { get; set; }
 
 
         [Option('d', "device", Required = true, HelpText = "IP/Adress of tasmota device")]
         public string DeviceAddress { get; set; }
 
-        [Option('f', "folder", Required = true, HelpText = "Folder to watch", Default = @"C:\temp\berry\")]
+        [Option('f', "folder", Required = true, HelpText = "Folder to watch. Must be an absolute path.")]
         public string Folder { get; set; }
 
-        [Option("filter", Required = false, HelpText = "Filter for files to watch", Default = "*.be")]
+        [Option("filter", Required = false, HelpText = "Filter for files to watch", Default = "*.*")]
         public string Filter { get; set; }
 
         [Option("restart", Required = false, HelpText = "Restart device after each upload", Default = true)]
@@ -41,23 +42,56 @@ namespace berrywatch
 
         public int Run()
         {
-            this.wc = new HttpClient();
-            this.wc.BaseAddress = new Uri($"http://{this.DeviceAddress}");
-
-            if (this.InitalUploadAllFiles)
+            return Task.Run(async () =>
             {
-                Task.Run(async () =>
+                this.wc = new HttpClient();
+                this.wc.BaseAddress = new Uri($"http://{this.DeviceAddress}");
+
+                await this.StartServer();
+
+                if (this.InitalUploadAllFiles)
                 {
-                    await Task.Delay(1000);
                     await this.uploadAllFiles();
-                }).Wait();
-            }
-            this.watch();
-            var srv = new Server();
-            srv.Run(this.ServerUrl, this.Folder);
-            return 0;
+                }
+                this.watch();
+                if (serverTask != null)
+                    await serverTask;
+
+                return 0;
+
+            }).Result;
         }
 
+        private async Task StartServer()
+        {
+            serverTask = Task.Run(()=>
+            {
+                var srv = new Server();
+                srv.Run(this.ServerUrl, this.Folder);
+            });  
+            while (!await this.CheckServerStarted() )
+            {
+                await Task.Delay(500);
+            }
+        }
+
+        private async Task<bool> CheckServerStarted() {
+            var wc = new HttpClient();
+            wc.BaseAddress = new Uri(this.ServerUrl);
+            try
+            {
+                var result = await wc.GetAsync("/prj");
+                return result.StatusCode == System.Net.HttpStatusCode.OK;
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                wc.Dispose();
+            }
+        }
         private async Task uploadAllFiles()
         {
             var all = Directory.GetFiles(this.Folder,this.Filter, SearchOption.TopDirectoryOnly);
