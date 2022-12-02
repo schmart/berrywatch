@@ -12,6 +12,7 @@ public class Server
         };
         var builder = WebApplication.CreateBuilder(args.ToArray());
 
+        builder.Logging.SetMinimumLevel(LogLevel.Warning);
         builder.Services.AddRazorPages();
         builder.Services.AddControllersWithViews();
         builder.Services.AddDirectoryBrowser();
@@ -30,12 +31,14 @@ public class Server
         var provider = new FileExtensionContentTypeProvider();
         // Add new mappings
         provider.Mappings[".be"] = "text/javascript";
+        provider.Mappings[".jsonl"] = "text/javascript";
+        provider.Mappings[".cmd"] = "text/javascript";
 
         app.UseStaticFiles(new StaticFileOptions
         {
             OnPrepareResponse = (ctx) =>
             {
-                Console.WriteLine("Devices fetches "+ctx.File.Name);
+                Console.WriteLine("Device fetches "+ctx.File.Name);
             },
             ContentTypeProvider = provider,
             FileProvider = fileProvider,
