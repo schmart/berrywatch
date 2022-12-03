@@ -40,6 +40,10 @@ namespace berrywatch
         [Option("initialUpload", Required = false, HelpText = "Upload all files at program start", Default = true)]
         public bool InitalUploadAllFiles { get; set; }
 
+        [Option("restartAction", Required = false, HelpText = "Tasmota command to restart the app", Default = "BR load(\"autoexec.be\")")]
+        public string RestartAction { get; set; }
+
+
         public int Run()
         {
             return Task.Run(async () =>
@@ -47,7 +51,7 @@ namespace berrywatch
                 this.wc = new HttpClient()
                 {
                     BaseAddress = new Uri($"http://{this.DeviceAddress}"),
-                    Timeout = TimeSpan.FromMilliseconds(1500)
+                    Timeout = TimeSpan.FromMilliseconds(4000)
                 };
 
 
@@ -125,7 +129,7 @@ namespace berrywatch
             {
                 try
                 {
-                    await this.RunTasmotaCommand("restart 1");
+                    await this.RunTasmotaCommand(this.RestartAction);
                     Console.WriteLine("Restarted");
                 } catch (Exception ex) {
                     Console.Error.WriteLine("Restart failed with" + ex.Message);

@@ -1,4 +1,4 @@
-﻿dotnet build -c Release
+dotnet build -c Release
 dotnet pack
 rem only if already installed
 dotnet tool uninstall -g berrywatch
