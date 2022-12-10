@@ -13,129 +13,30 @@ using System.Web;
 namespace berrywatch
 {
     [Verb("watch", HelpText = "Watch folder and upload to tasmota device")]
-    public class Watcher
+    public class Watcher:UploaderBase
     {
         private FileSystemWatcher watcher;
-        private HttpClient wc;
-        private Timer timer = null;
-        private Task serverTask = null;
-
-
-        [Option('u', "url", Required = true, HelpText = "Host local server on this url. Example: http://192.168.178.101:5001")]
-        public string ServerUrl { get; set; }
-
-
-        [Option('d', "device", Required = true, HelpText = "IP/Adress of tasmota device")]
-        public string DeviceAddress { get; set; }
-
-        [Option('f', "folder", Required = true, HelpText = "Folder to watch. Must be an absolute path.")]
-        public string Folder { get; set; }
-
-        [Option("filter", Required = false, HelpText = "Filter for files to watch", Default = "*.*")]
-        public string Filter { get; set; }
-
-        [Option("restart", Required = false, HelpText = "Restart device after each upload", Default = true)]
-        public bool RestartAfterUpload { get; set; }
-
+  
         [Option("initialUpload", Required = false, HelpText = "Upload all files at program start", Default = true)]
         public bool InitalUploadAllFiles { get; set; }
 
-        [Option("restartAction", Required = false, HelpText = "Tasmota command to restart the app", Default = "BR load(\"autoexec.be\")")]
-        public string RestartAction { get; set; }
-
-
+  
         public int Run()
         {
             return Task.Run(async () =>
             {
-                this.wc = new HttpClient()
-                {
-                    BaseAddress = new Uri($"http://{this.DeviceAddress}"),
-                    Timeout = TimeSpan.FromMilliseconds(4000)
-                };
 
-
-                await this.StartServer();
+                await this.Initialize();
 
                 if (this.InitalUploadAllFiles)
                 {
                     await this.uploadAllFiles();
                 }
                 this.watch();
-                if (serverTask != null)
-                    await serverTask;
-
+                await this.WaitForServer();
                 return 0;
 
             }).Result;
-        }
-
-        private async Task StartServer()
-        {
-            serverTask = Task.Run(() =>
-            {
-                var srv = new Server();
-                srv.Run(this.ServerUrl, this.Folder);
-            });
-            while (!await this.CheckServerStarted())
-            {
-                await Task.Delay(500);
-            }
-        }
-
-        private async Task<bool> CheckServerStarted()
-        {
-            var wc = new HttpClient();
-            wc.BaseAddress = new Uri(this.ServerUrl);
-            try
-            {
-                var result = await wc.GetAsync("/prj");
-                return result.StatusCode == System.Net.HttpStatusCode.OK;
-            }
-            catch
-            {
-                return false;
-            }
-            finally
-            {
-                wc.Dispose();
-            }
-        }
-        private async Task uploadAllFiles()
-        {
-            var all = Directory.GetFiles(this.Folder, this.Filter, SearchOption.TopDirectoryOnly);
-            foreach (var file in all)
-            {
-                await this.uploadFileAsync(file);
-            }
-        }
-
-        private void TriggerRestart()
-        {
-            if (!this.RestartAfterUpload)
-                return;
-            if (this.timer != null)
-            {
-                this.timer.Dispose();
-            }
-
-            this.timer = new Timer((obj) => this.restarter(), null, 1000, Timeout.Infinite);
-        }
-        private void restarter()
-        {
-            this.timer.Dispose();
-            this.timer = null;
-            Task.Run(async () =>
-            {
-                try
-                {
-                    await this.RunTasmotaCommand(this.RestartAction);
-                    Console.WriteLine("Restarted");
-                } catch (Exception ex) {
-                    Console.Error.WriteLine("Restart failed with" + ex.Message);
-                }
-
-            }).Wait();
         }
 
         private void watch()
@@ -148,42 +49,7 @@ namespace berrywatch
             watcher.Created += OnCreated;
             watcher.EnableRaisingEvents = true;
         }
-        private async void uploadFile(string path)
-        {
-            Task.Run(async () =>
-            {
-                await this.uploadFileAsync(path);
-            }).Wait(3000);
-        }
 
-        private async Task uploadFileAsync(string path)
-        {
-            try
-            {
-
-                var fName = (path.StartsWith(this.Folder)) ? path.Substring(this.Folder.Length) : path;
-                Console.WriteLine($"Upload file {fName}");
-
-                await this.RunTasmotaCommand($"UrlFetch {ServerUrl}/prj/{fName}");
-                if (this.RestartAfterUpload)
-                {
-                    this.TriggerRestart();
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine("Upload failed with "+ex.Message);
-            }
-        }
-
-        private async Task RunTasmotaCommand(string cmd)
-        {
-            Console.WriteLine("CMD " + cmd);
-            var encoded = HttpUtility.UrlEncode(cmd);
-            var request = $"/cm?cmnd={encoded}";
-            var result = await this.wc.GetAsync(request);
-            Console.WriteLine(" " + result.StatusCode);
-        }
         private void OnCreated(object sender, FileSystemEventArgs e)
         {
             this.uploadFile(e.Name);

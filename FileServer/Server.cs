@@ -5,6 +5,7 @@ using Microsoft.Extensions.FileProviders.Physical;
 
 public class Server
 {
+    public event Action<string> FileCompleted;
     public void Run(string url, string path)
     {
         var args = new List<string>() {
@@ -31,8 +32,10 @@ public class Server
         var provider = new FileExtensionContentTypeProvider();
         // Add new mappings
         provider.Mappings[".be"] = "text/javascript";
+        provider.Mappings[".json"] = "text/javascript";
         provider.Mappings[".jsonl"] = "text/javascript";
         provider.Mappings[".cmd"] = "text/javascript";
+        provider.Mappings[".tft"] = "application/octet-stream";
 
         app.UseStaticFiles(new StaticFileOptions
         {
@@ -41,7 +44,7 @@ public class Server
                 ctx.Context.Response.Headers["Cache-Control"] = "no-cache, no-store";
                 ctx.Context.Response.Headers["Pragma"] = "no-cache";
                 ctx.Context.Response.Headers["Expires"] = "-1";
-                Console.WriteLine("Device fetches "+ctx.File.Name);
+                ctx.Context.Response.OnCompleted(this.OnFileCompleted, ctx.File.Name);
             },
             ContentTypeProvider = provider,
             FileProvider = fileProvider,
@@ -60,5 +63,11 @@ public class Server
         app.MapRazorPages();
 
         app.Run();
+    }
+
+    private async Task OnFileCompleted(object stringObject)
+    {
+        var fileName = stringObject as string;
+        FileCompleted?.Invoke(fileName);
     }
 }

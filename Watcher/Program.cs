@@ -2,8 +2,12 @@
 using berrywatch;
 using CommandLine;
 
-Parser.Default.ParseArguments<Watcher>(args)
+Parser.Default.ParseArguments<Watcher,Uploader>(args)
               .WithParsed<Watcher>(o =>
                 {
                     o.Run();
-                });
+                })
+              .WithParsed<Uploader>(o =>
+               {
+                   o.Run();
+               });
