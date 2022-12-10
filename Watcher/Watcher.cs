@@ -13,30 +13,24 @@ using System.Web;
 namespace berrywatch
 {
     [Verb("watch", HelpText = "Watch folder and upload to tasmota device")]
-    public class Watcher:UploaderBase
+    public class Watcher:UploaderBase,ICommand
     {
         private FileSystemWatcher watcher;
   
         [Option("initialUpload", Required = false, HelpText = "Upload all files at program start", Default = true)]
         public bool InitalUploadAllFiles { get; set; }
 
-  
-        public int Run()
+        public async Task<int> Run()
         {
-            return Task.Run(async () =>
+            await this.Initialize();
+
+            if (this.InitalUploadAllFiles)
             {
-
-                await this.Initialize();
-
-                if (this.InitalUploadAllFiles)
-                {
-                    await this.uploadAllFiles();
-                }
-                this.watch();
-                await this.WaitForServer();
-                return 0;
-
-            }).Result;
+                await this.uploadAllFiles();
+            }
+            this.watch();
+            await this.WaitForServer();
+            return 0;
         }
 
         private void watch()

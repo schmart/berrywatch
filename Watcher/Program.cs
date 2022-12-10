@@ -2,12 +2,16 @@
 using berrywatch;
 using CommandLine;
 
-Parser.Default.ParseArguments<Watcher,Uploader>(args)
-              .WithParsed<Watcher>(o =>
-                {
-                    o.Run();
-                })
-              .WithParsed<Uploader>(o =>
-               {
-                   o.Run();
-               });
+await Parser.Default
+    .ParseArguments<Watcher, Uploader>(args)
+    .WithParsedAsync<ICommand>(async o =>
+        {
+            try
+            {
+                var result = await o.Run();
+                Console.WriteLine($"Result {result}");
+            } catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex.ToString());
+            }
+        });

@@ -14,7 +14,7 @@ namespace berrywatch
 {
     public class UploaderBase
     {
-        private HttpClient wc;
+        private HttpClient wc = null;
         private Timer timer = null;
         private Task serverTask = null;
         private Dictionary<string, TaskCompletionSource> waitForTasksDict = new Dictionary<string, TaskCompletionSource>();
@@ -30,7 +30,7 @@ namespace berrywatch
 
         [Option("filter", Required = false, HelpText = "Filter for files to watch", Default = "*.*")]
         public string Filter { get; set; }
-        
+
         [Option("restart", Required = false, HelpText = "Restart device after each upload", Default = true)]
         public bool RestartAfterUpload { get; set; }
 
@@ -80,9 +80,16 @@ namespace berrywatch
         {
             serverTask = Task.Run(() =>
             {
-                var srv = new Server();
-                srv.FileCompleted += OnFileCompleted;
-                srv.Run(this.ServerUrl, this.Folder);
+                try
+                {
+                    var srv = new Server();
+                    srv.FileCompleted += OnFileCompleted;
+                    srv.Run(this.ServerUrl, this.Folder);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine(ex.Message);
+                }
             });
             while (!await this.CheckServerStarted())
             {
@@ -118,7 +125,7 @@ namespace berrywatch
             var restart = RestartAfterUpload;
             foreach (var file in all)
             {
-                restart = await this.uploadFileAsync(file,restart);
+                restart = await this.uploadFileAsync(file, restart);
             }
             if (restart)
                 this.TriggerRestart();
@@ -154,13 +161,13 @@ namespace berrywatch
             }).Wait();
         }
 
-        protected async void uploadFile(string path)
+        protected void uploadFile(string path)
         {
             Task.Run(async () =>
             {
-                var restart = await this.uploadFileAsync(path,this.RestartAfterUpload);
+                var restart = await this.uploadFileAsync(path, this.RestartAfterUpload);
                 if (restart)
-                    this.TriggerRestart(); 
+                    this.TriggerRestart();
             }).Wait(4000);
         }
 
@@ -187,9 +194,9 @@ namespace berrywatch
                 }
                 var waitingTask = this.WaitForServerTask(fName);
                 await this.RunTasmotaCommand(cmd);
-                var done = Task.WaitAny(waitingTask,Task.Delay(4000));
-               
-                if (done==1)
+                var done = Task.WaitAny(waitingTask, Task.Delay(4000));
+
+                if (done == 1)
                     throw new Exception($"Timeout while waiting for {fName}");
 
                 this.ClearWaitForServerTask(fName);
@@ -210,15 +217,6 @@ namespace berrywatch
             var result = await this.wc.GetAsync(request);
             if (result.StatusCode != System.Net.HttpStatusCode.OK)
                 Console.Error.WriteLine(" " + result.StatusCode);
-        }
-        private void OnCreated(object sender, FileSystemEventArgs e)
-        {
-            this.uploadFile(e.Name);
-        }
-
-        private void OnChanged(object source, FileSystemEventArgs e)
-        {
-            this.uploadFile(e.Name);
         }
     }
 }

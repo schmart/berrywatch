@@ -13,19 +13,15 @@ using System.Web;
 namespace berrywatch
 {
     [Verb("upload", HelpText = "Watch folder and upload to tasmota device")]
-    public class Uploader:UploaderBase
+    public class Uploader:UploaderBase,ICommand
     {
-        public int Run()
+        public async Task<int> Run()
         {
-            return Task.Run(async () =>
-            {
-                this.Initialize();
+            await this.Initialize();
 
-                await this.uploadAllFiles();
-                
-                return 0;
+            await this.uploadAllFiles();
 
-            }).Result;
+            return 0;
         }
     }
 }
