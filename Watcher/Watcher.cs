@@ -58,6 +58,7 @@ namespace berrywatch
         {
             // avoiding resource leak
             watcher.Changed -= OnChanged;
+            watcher.Created -= OnCreated;
             this.watcher.Dispose();
         }
     }
